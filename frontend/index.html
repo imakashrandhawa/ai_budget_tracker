@@ -34,6 +34,28 @@
         .then(data => {
           console.log("Access Token:", data.access_token);
           console.log("Item ID:", data.item_id);
+        return fetch('/api/transactions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ access_token: data.access_token })
+    });
+  })
+  .then(res => res.json())
+  .then(txns => {
+    console.log("Transactions:", txns);
+    alert("Fetched " + txns.length + " transactions.");
+        const container = document.createElement('div');
+  container.innerHTML = "<h3>Transaction List</h3>";
+
+  txns.forEach(txn => {
+    const item = document.createElement('p');
+    item.textContent = `${txn.date} | ${txn.name} | $${txn.amount}`;
+    container.appendChild(item);
+  });
+
+  document.body.appendChild(container);
         })
         .catch(err => console.error("Token exchange failed:", err));
         },

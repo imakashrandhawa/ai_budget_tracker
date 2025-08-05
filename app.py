@@ -3,12 +3,14 @@ from flask import Flask, jsonify, send_from_directory, request
 from dotenv import load_dotenv
 from plaid.api import plaid_api
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_account_filters import LinkTokenAccountFilters
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid import Configuration, ApiClient
+from plaid.model.transactions_get_request import TransactionsGetRequest
+from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
+from datetime import datetime, timedelta
 
 # Load .env variables
 load_dotenv()
@@ -67,6 +69,28 @@ def exchange_public_token():
         "access_token": access_token,
         "item_id": item_id
     })
+
+@app.route("/api/transactions", methods=["POST"])
+def get_transactions():
+    data = request.get_json()
+    access_token = data.get("access_token")
+
+    # Set the date range (last 30 days)
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=30)
+
+    request_body = TransactionsGetRequest(
+        access_token=access_token,
+        start_date=start_date,
+        end_date=end_date,
+        options=TransactionsGetRequestOptions(count=10, offset=0)
+    )
+
+    response = client.transactions_get(request_body)
+    transactions = response['transactions']
+    transactions_data = [txn.to_dict() for txn in transactions]
+
+    return jsonify(transactions_data)
 
 if __name__ == "__main__":
     app.run(debug=True)
