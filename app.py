@@ -90,7 +90,19 @@ def get_transactions():
     transactions = response['transactions']
     transactions_data = [txn.to_dict() for txn in transactions]
 
-    return jsonify(transactions_data)
+    # Analyze spend by category
+    category_summary = {}
+    for txn in transactions_data:
+        categories = txn.get('category', ['Uncategorized'])
+        top_category = categories[0] if categories else 'Uncategorized'
+        amount = txn['amount']
+        category_summary[top_category] = category_summary.get(top_category, 0) + amount
+    print([txn.get('category') for txn in transactions_data])
+
+    return jsonify({
+        "transactions": transactions_data,
+        "summary": category_summary
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

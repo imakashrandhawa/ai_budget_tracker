@@ -1,75 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AI Budget Advisor - Connect Bank</title>
-  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-</head>
-<body>
-  <h2>Connect Your Bank Account</h2>
-  <button id="link-button">Launch Plaid Link</button>
+   <head>
+      <meta charset="UTF-8">
+      <title>AI Budget Advisor - Connect Bank</title>
+      <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+   </head>
+   <body>
+      <h2>Connect Your Bank Account</h2>
+      <button id="link-button">Launch Plaid Link</button>
+      <script>
+         async function createLinkToken() {
+           const response = await fetch('/api/create_link_token');
+           const data = await response.json();
+           return data.link_token;
+         }
 
-  <script>
-    async function createLinkToken() {
-      const response = await fetch('/api/create_link_token');
-      const data = await response.json();
-      return data.link_token;
-    }
+         document.getElementById('link-button').onclick = async function () {
+           const linkToken = await createLinkToken();
 
-    document.getElementById('link-button').onclick = async function () {
-      const linkToken = await createLinkToken();
+           const handler = Plaid.create({
+             token: linkToken,
+             onSuccess: function(public_token, metadata) {
+               alert("Bank linked successfully!");
+               fetch('/api/exchange_public_token', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json'
+               },
+               body: JSON.stringify({ public_token })
+             })
+             .then(res => res.json())
+             .then(data => {
+               console.log("Access Token:", data.access_token);
+               console.log("Item ID:", data.item_id);
+             return fetch('/api/transactions', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+           body: JSON.stringify({ access_token: data.access_token })
+         });
+         })
+         .then(res => res.json())
+         .then(data => {
+         const txns = data.transactions;
+         const summary = data.summary;
 
-      const handler = Plaid.create({
-        token: linkToken,
-        onSuccess: function(public_token, metadata) {
-          alert("Bank linked successfully!");
-          fetch('/api/exchange_public_token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ public_token })
-        })
-        .then(res => res.json())
-        .then(data => {
-          console.log("Access Token:", data.access_token);
-          console.log("Item ID:", data.item_id);
-        return fetch('/api/transactions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ access_token: data.access_token })
-    });
-  })
-  .then(res => res.json())
-  .then(txns => {
-    console.log("Transactions:", txns);
-    alert("Fetched " + txns.length + " transactions.");
-        const container = document.createElement('div');
-  container.innerHTML = "<h3>Transaction List</h3>";
+         // Show transactions
+         const container = document.createElement('div');
+         container.innerHTML = "<h3>Transaction List</h3>";
+         txns.forEach(txn => {
+             const item = document.createElement('p');
+             item.textContent = `${txn.date} | ${txn.name} | $${txn.amount}`;
+             container.appendChild(item);
+         });
 
-  txns.forEach(txn => {
-    const item = document.createElement('p');
-    item.textContent = `${txn.date} | ${txn.name} | $${txn.amount}`;
-    container.appendChild(item);
-  });
+         // Show category summary
+         const summaryDiv = document.createElement('div');
+         summaryDiv.innerHTML = "<h3>Spending by Category</h3>";
+         for (const category in summary) {
+             const line = document.createElement('p');
+             line.textContent = `${category}: $${summary[category].toFixed(2)}`;
+             summaryDiv.appendChild(line);
+         }
 
-  document.body.appendChild(container);
-        })
-        .catch(err => console.error("Token exchange failed:", err));
-        },
-        onExit: function(err, metadata) {
-          if (err) {
-            console.error("Exit with error:", err);
-          } else {
-            console.log("User exited:", metadata);
-          }
-        }
-      });
+         document.body.appendChild(container);
+         document.body.appendChild(summaryDiv);
+         })
+           .catch(err => console.error("Token exchange failed:", err));
+           },
+           onExit: function(err, metadata) {
+             if (err) {
+               console.error("Exit with error:", err);
+             } else {
+               console.log("User exited:", metadata);
+             }
+           }
+         });
 
-      handler.open();
-    };
-  </script>
-</body>
+           handler.open();
+         };
+      </script>
+   </body>
 </html>
