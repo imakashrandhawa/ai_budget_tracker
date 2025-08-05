@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Budget Advisor - Connect Bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+</head>
+<body>
+  <h2>Connect Your Bank Account</h2>
+  <button id="link-button">Launch Plaid Link</button>
+
+  <script>
+    async function createLinkToken() {
+      const response = await fetch('/api/create_link_token');
+      const data = await response.json();
+      return data.link_token;
+    }
+
+    document.getElementById('link-button').onclick = async function () {
+      const linkToken = await createLinkToken();
+
+      const handler = Plaid.create({
+        token: linkToken,
+        onSuccess: function(public_token, metadata) {
+          alert("Bank linked successfully!");
+          console.log("Public Token:", public_token);
+          console.log("Metadata:", metadata);
+        },
+        onExit: function(err, metadata) {
+          if (err) {
+            console.error("Exit with error:", err);
+          } else {
+            console.log("User exited:", metadata);
+          }
+        }
+      });
+
+      handler.open();
+    };
+  </script>
+</body>
+</html>
