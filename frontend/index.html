@@ -66,6 +66,15 @@
 
          document.body.appendChild(container);
          document.body.appendChild(summaryDiv);
+         const suggestionsDiv = document.createElement('div');
+         suggestionsDiv.innerHTML = "<h3>Budget Suggestions</h3>";
+         (data.suggestions || []).forEach(suggestion => {
+             const line = document.createElement('p');
+             line.textContent = suggestion;
+             suggestionsDiv.appendChild(line);
+         });
+
+         document.body.appendChild(suggestionsDiv);
          })
            .catch(err => console.error("Token exchange failed:", err));
            },

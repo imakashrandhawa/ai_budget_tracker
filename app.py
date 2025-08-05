@@ -99,10 +99,26 @@ def get_transactions():
         category_summary[top_category] = category_summary.get(top_category, 0) + amount
     print([txn.get('category') for txn in transactions_data])
 
+    suggestions = []
+    for category, total in category_summary.items():
+        if total > 100:  # adjust threshold as you like
+            suggestions.append(
+                f"You spent ${total:.2f} on {category}. Consider setting a budget or reducing spending in this area.")
+        elif total > 0:
+            suggestions.append(f"Your {category} spending is reasonable at ${total:.2f}.")
+        elif total < 0:
+            suggestions.append(f"You have refunds or negative spend in {category}. Review for errors or returns!")
+
+    if not suggestions:
+        suggestions.append(
+            "No spending detected this month. Either you’re very thrifty or Plaid sandbox is being lazy.")
+
     return jsonify({
         "transactions": transactions_data,
-        "summary": category_summary
+        "summary": category_summary,
+        "suggestions": suggestions
     })
+
 
 if __name__ == "__main__":
     app.run(debug=True)
