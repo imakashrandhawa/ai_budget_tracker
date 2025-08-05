@@ -23,8 +23,19 @@
         token: linkToken,
         onSuccess: function(public_token, metadata) {
           alert("Bank linked successfully!");
-          console.log("Public Token:", public_token);
-          console.log("Metadata:", metadata);
+          fetch('/api/exchange_public_token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ public_token })
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Access Token:", data.access_token);
+          console.log("Item ID:", data.item_id);
+        })
+        .catch(err => console.error("Token exchange failed:", err));
         },
         onExit: function(err, metadata) {
           if (err) {

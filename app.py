@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from dotenv import load_dotenv
 from plaid.api import plaid_api
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
@@ -7,6 +7,7 @@ from plaid.model.link_token_account_filters import LinkTokenAccountFilters
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid import Configuration, ApiClient
 
 # Load .env variables
@@ -47,6 +48,25 @@ def create_link_token():
 @app.route("/", methods=["GET"])
 def serve_frontend():
     return send_from_directory("frontend", "index.html")
+
+@app.route("/api/exchange_public_token", methods=["POST"])
+def exchange_public_token():
+    data = request.get_json()
+    public_token = data.get("public_token")
+
+    request_body = ItemPublicTokenExchangeRequest(public_token=public_token)
+    response = client.item_public_token_exchange(request_body)
+
+    access_token = response['access_token']
+    item_id = response['item_id']
+
+    print("Access Token:", access_token)  # You’ll store this securely later
+    print("Item ID:", item_id)
+
+    return jsonify({
+        "access_token": access_token,
+        "item_id": item_id
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
